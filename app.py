@@ -1,10 +1,19 @@
 from flask import Flask, render_template
 from extensions import db, login_manager
 from models.user import User
+import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secretkey'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bookstore.db'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secretkey')
+
+# Configuración para MySQL externo
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_USER = os.getenv('DB_USER', 'bookstore_user')
+DB_PASS = os.getenv('DB_PASS', 'bookstore_pass')
+DB_NAME = os.getenv('DB_NAME', 'bookstore')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 login_manager.init_app(app)
