@@ -179,25 +179,6 @@ mysql -h 172.31.25.142 -u bookstore_user -p
 SHOW DATABASES;
 EXIT;
 ```
-
-###  Preparar la Aplicación Flask
-
-#### Clonar o Transferir el Proyecto
-
-```bash
-# Opción A: Si el proyecto está en GitHub
-cd ~
-git clone https://github.com/tu-usuario/Topicos_Tel_P2.git
-cd Topicos_Tel_P2
-
-# Opción B: Transferir desde tu máquina local
-# Desde tu máquina local:
-scp -i "tu-clave.pem" -r ./Topicos_Tel_P2 ubuntu@<IP-PUBLICA>:~/
-
-# Luego en el servidor:
-cd ~/Topicos_Tel_P2
-```
-
 ####  Crear Archivos de Configuración
 
 1) Crear archivo `.env`:
@@ -258,51 +239,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 5000
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
-```
-
-4) Verificar/Crear archivo `requirements.txt`:
-
-```bash
-nano requirements.txt
-```
-
-Contenido:
-
-```txt
-Flask==3.0.0
-Flask-SQLAlchemy==3.1.1
-Flask-Login==0.6.3
-PyMySQL==1.1.0
-cryptography==41.0.7
-python-dotenv==1.0.0
-gunicorn==21.2.0
-```
-
-5) Actualizar `app.py` para cargar variables de entorno (al inicio del archivo):
-
-```python
-from flask import Flask, render_template
-from extensions import db, login_manager
-from models.user import User
-import os
-from dotenv import load_dotenv
-
-# Cargar variables de entorno
-load_dotenv()
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secretkey')
-
-# Configuración para MySQL externo
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_USER = os.getenv('DB_USER', 'bookstore_user')
-DB_PASS = os.getenv('DB_PASS', 'bookstore_pass')
-DB_NAME = os.getenv('DB_NAME', 'bookstore')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# ... resto del código
 ```
 
 ###  Compilación y Construcción de la Imagen Docker
