@@ -38,7 +38,7 @@ datos en RDS.
 
 ## ⚠️ 1.2. Aspectos no implementados o pendientes
 - No se pudo implementar HTTPS con el balanceador de carga
-  Justificación:
+- Justificación:
    No hay presupuesto para registrar un dominio (~$10-15 USD/año)
    No se puede usar el dominio de la universidad sin permisos administrativos
    Los dominios gratuitos (Freenom) no son aceptados por ACM en muchos casos
