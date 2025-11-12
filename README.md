@@ -10,8 +10,16 @@
 
 El proyecto consiste en desplegar una aplicación web monolítica desarrollada en Flask (BookStore) en AWS, cumpliendo con dos objetivos:
 
-1) Objetivo 1: Despliegue de la app BookStore en dos VMs (EC2): una para Flask y otra para MySQL, usando NGINX, Docker y SSL.  
-2) Objetivo 2: Escalamiento con Auto Scaling Group (ASG), Application Load Balancer (ALB), Amazon RDS (MySQL) y Elastic File System (EFS), garantizando alta disponibilidad y balanceo de carga.
+1) Desplegar la aplicación BookStore Monolítica en dos (2) Máquinas Virtuales
+en AWS, con un dominio propio, certificado SSL y Proxy inverso en NGINX. (un servidor para
+la base de datos y otro servidor para la aplicación + nginx). 
+2) Objetivo 2: Realizar el escalamiento en nube de la aplicación monolítica, siguiente
+algún patrón de arquitectura de escalamiento de apps monolíticas en AWS. La aplicación
+debe ser escalada utilizando Máquinas Virtuales (VM) con autoescalamiento, base de datos
+aparte Administrada o si es implementada con VM con Alta Disponibilidad, y Archivos
+compartidos vía NFS (como un servicio o una VM con NFS con Alta Disponibilidad), base de
+datos en RDS.
+
 
 ---
 
@@ -24,16 +32,16 @@ El proyecto consiste en desplegar una aplicación web monolítica desarrollada e
 - Creación de AMI “Golden” con configuración productiva.
 - Implementación de Auto Scaling Group (ASG), Application Load Balancer (ALB) y Target Groups.
 - Integración de almacenamiento compartido EFS entre instancias del ASG.
-- Configuración del sistema Flask con `systemd` para autoarranque.
 - Alta disponibilidad y balanceo de carga a través de AWS.
 
 ---
 
 ## ⚠️ 1.2. Aspectos no implementados o pendientes
-
-- Automatización completa del pipeline CI/CD (GitHub Actions).
-- Configuración avanzada de métricas en CloudWatch (solo logs básicos).
-- Certificado SSL administrado directamente desde el ALB (se usó NGINX para HTTPS en el Objetivo 1).
+- No se pudo implementar HTTPS con el balanceador de carga
+  Justificación:
+   No hay presupuesto para registrar un dominio (~$10-15 USD/año)
+   No se puede usar el dominio de la universidad sin permisos administrativos
+   Los dominios gratuitos (Freenom) no son aceptados por ACM en muchos casos
 
 ---
 
@@ -42,31 +50,8 @@ El proyecto consiste en desplegar una aplicación web monolítica desarrollada e
 ### 🧱 Objetivo 1 – Arquitectura monolítica con 2 VMs
 
 ```
-                       ┌──────────────────────────────────────┐
-Usuario ───►  HTTPS/HTTP│   https://bookstore.duckdns.org     │
-                       └──────────────────────────────────────┘
-                                      │
-                                      ▼
-                             ┌────────────────┐
-                             │    NGINX       │
-                             │  (Proxy inverso│
-                             │   + Certbot)   │
-                             └───────┬────────┘
-                     HTTP:80 / HTTPS:443 │
-                     Proxy_pass → 127.0.0.1:5000
-                                      │
-                                      ▼
-                          ┌────────────────────┐
-                          │  Flask (Docker)    │
-                          │  Puerto 5000/TCP   │
-                          └────────┬───────────┘
-                                   │
-                                   ▼
-                     ┌────────────────────────────┐
-                     │   VM Base de Datos (MySQL) │
-                     │   Puerto 3306/TCP          │
-                     │   Red privada 172.31.0.0/16│
-                     └────────────────────────────┘
+<img width="382" height="431" alt="image" src="https://github.com/user-attachments/assets/1259afe6-ba1a-488b-a327-84736b7ce9b9" />
+
 ```
 
 Patrón: Arquitectura monolítica tradicional con separación de capas (app y base de datos).  
@@ -75,35 +60,8 @@ Buenas prácticas: Uso de proxy inverso, variables de entorno, aislamiento con D
 ### ☁️ Objetivo 2 – Arquitectura monolítica escalable con servicios gestionados
 
 ```
-                   ┌──────────────────────────────────────┐
-Usuario ───►  HTTPS│  https://bookstore.duckdns.org (SSL) │
-                   └──────────────────────────────────────┘
-                                   │
-                                   ▼
-                         ┌─────────────────────────┐
-                         │ Application Load Balancer│
-                         │  Puertos: 80 / 443       │
-                         │  Target: HTTP:5000       │
-                         └───────────┬──────────────┘
-                                     ▼
-                           ┌─────────────────────────┐
-                           │ Auto Scaling Group (ASG)│
-                           │  Flask + systemd        │
-                           │  AMI Golden             │
-                           └───────────┬─────────────┘
-                 Puerto 5000/TCP       │
-                 NFS 2049/TCP          │
-                                      ▼
-                         ┌─────────────────────────┐
-                         │  Elastic File System     │
-                         │  /mnt/efs compartido     │
-                         └─────────────────────────┘
-                                      │
-                         MySQL 3306/TCP (RDS MySQL)
-                                      ▼
-                         ┌─────────────────────────┐
-                         │     Amazon RDS MySQL    │
-                         └─────────────────────────┘
+<img width="733" height="747" alt="image" src="https://github.com/user-attachments/assets/4c757ad1-b9f9-4ec4-8d75-d3c2d5b81a8f" />
+
 ```
 
 Patrón: Monolithic Web App con escalamiento elástico y almacenamiento compartido (ALB + ASG + RDS + EFS).  
