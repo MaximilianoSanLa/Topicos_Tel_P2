@@ -302,7 +302,126 @@ curl http://localhost:5000/health
 # Si configuraste el endpoint de health check, debe retornar:
 # {"status":"healthy","database":"connected"}
 ```
+## Configuración de parámetros del proyecto
 
+Esta sección documenta los parámetros esenciales del entorno, incluyendo direcciones IP, puertos, variables de entorno y configuraciones clave utilizadas durante los despliegues de los Objetivos 1 y 2.
+
+---
+
+## 1. Parámetros generales
+
+| Parámetro | Descripción | Valor o Ejemplo |
+|-----------|-------------|------------------|
+| Región AWS | Región donde se desplegaron los recursos | `us-east-1` |
+| VPC | Red por defecto usada por AWS Academy | `172.31.0.0/16` |
+| Sistema operativo base | Ubuntu Server LTS | `22.04 LTS` |
+| Nombre de dominio | Dominio público usado para el despliegue | `bookstore.duckdns.org` |
+| Key Pair (SSH) | Llave para acceso seguro a las instancias | `bookstore-key.pem` |
+| Grupo de seguridad (SG) | Accesos por puertos | `bookstore-app-sg`, `bookstore-db-sg`, `bookstore-alb-sg` |
+
+---
+
+##  2. Puertos y protocolos
+
+| Servicio | Puerto | Protocolo | Descripción |
+|----------|--------|-----------|-------------|
+| SSH | `22` | TCP | Acceso remoto seguro a la instancia (solo desde IP personal) |
+| HTTP | `80` | TCP | Tráfico web no cifrado |
+| HTTPS | `443` | TCP | Tráfico web cifrado (Certbot o ACM) |
+| Flask App | `5000` | TCP | Puerto interno del servidor Flask |
+| MySQL (EC2 o RDS) | `3306` | TCP | Conexión de la app hacia la base de datos |
+| EFS (NFS) | `2049` | TCP | Comunicación entre instancias y sistema de archivos compartido |
+
+---
+
+##  3. Direcciones IP y redes
+
+- Red interna (VPC): `172.31.0.0/16`  
+- Rango usado entre instancias (APP ↔ DB): `172.31.x.x`  
+- IP pública (para acceso SSH y dominio DuckDNS): asignada mediante Elastic IP  
+- Conexión entre servicios:
+  - Flask ↔ MySQL: por IP privada (`172.31.xx.xx:3306`)  
+  - ALB ↔ Flask instances: por HTTP (puerto `5000`)  
+  - Flask ↔ EFS: por NFS (puerto `2049`)
+
+---
+
+##  4. Variables de entorno (.env)
+
+### Objetivo 1 – Base local y privada
+
+```env
+SECRET_KEY=mi-clave-super-secreta-12345
+DB_HOST=172.31.20.10
+DB_USER=bookstore_user
+DB_PASS=bookstore_pass
+DB_NAME=bookstore
+FLASK_ENV=production
+```
+
+### Infraestructura administrada (RDS y EFS)
+
+```env
+SECRET_KEY=mi-clave-super-secreta-prod-2025
+DB_HOST=bookstore-rds.xxxxx.us-east-1.rds.amazonaws.com
+DB_USER=admin
+DB_PASS=BookstoreRDS2025!
+DB_NAME=bookstore
+DB_PORT=3306
+FLASK_ENV=production
+```
+
+Nota: Estas variables se leen desde `app.py` usando `os.getenv()` para no exponer credenciales directamente.
+
+---
+
+## 5. Parámetros de Docker y Compose
+
+Archivo: `docker-compose.prod.yml`
+
+```yaml
+version: "3.8"
+services:
+  flaskapp:
+    build: .
+    container_name: bookstore-flask
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+  db:
+    image: mysql:8.0
+    container_name: bookstore-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: bookstore
+      MYSQL_DATABASE: bookstore
+    ports:
+      - "3306:3306"
+```
+
+Explicación:
+
+- `flaskapp`: ejecuta la aplicación Flask dentro de un contenedor Docker.  
+- `db`: instancia local de MySQL usada solo para el Objetivo 1.  
+- `env_file`: carga el archivo `.env` con credenciales de base de datos.  
+- `volumes`: permite persistir código fuente/datos locales (entorno de desarrollo).
+
+---
+
+##  Parámetros del Launch Template (Objetivo 2)
+
+| Campo | Valor | Descripción |
+|-------|-------|-------------|
+| AMI ID | `ami-xxxxxx` | Imagen base “Golden” con app preconfigurada |
+| Instance Type | `t2.small` | Configuración balanceada de CPU y RAM |
+| Security Group | `bookstore-app-asg-sg` | Permite HTTP(80), HTTPS(443), EFS(2049) |
+| User Data Script | (ver abajo) | Ejecuta la app automáticamente al iniciar |
+| Subnet | Default VPC | Usada para distribución Multi-AZ |
+| Key Pair | `bookstore-key.pem` | Acceso SSH manual opcional |
 
 
 
