@@ -68,13 +68,6 @@ Patrón: Monolithic Web App con escalamiento elástico y almacenamiento comparti
 Buenas prácticas: Infraestructura redundante, health checks en ALB/ASG y persistencia compartida en EFS.
 
 # Proyecto 2 – Detalle Técnico por Objetivos (Docker, ALB, TG, SG, MySQL)
-
-Este documento complementa el README principal con una descripción técnica detallada de los Objetivos 1 y 2, versiones, configuraciones, diagramas y justificación de HTTPS con ALB.
-
----
-
-## 1) OBJETIVO 1: Aplicación Flask en Docker con MySQL Externo (Actual)
-
 ### 1.1 Componentes
 
 - Servidor Flask (172.31.31.7)
@@ -257,8 +250,7 @@ Propósito:
 | MySQL Server   | 8.0.35   | Sistema gestor de base de datos relacional   |
 | MySQL Client   | 8.0.35   | Cliente de línea de comandos                 |
 | InnoDB         | 8.0.35   | Motor de almacenamiento transaccional        |
-| Character Set  | utf8mb4  | Codificación (soporta emojis)                |
-| Collation      | utf8mb4_unicode_ci | Reglas de comparación de strings   |
+
 
 Instalación:
 
@@ -269,21 +261,9 @@ sudo systemctl enable mysql
 sudo systemctl start mysql
 ```
 
-#### 1.4.2 Configuración del Servidor MySQL
 
-Archivo: `/etc/mysql/mysql.conf.d/mysqld.cnf`
 
-```ini
-[mysqld]
-bind-address = 0.0.0.0
-port = 3306
-max_connections = 151
-character-set-server = utf8mb4
-collation-server = utf8mb4_unicode_ci
-default-storage-engine = InnoDB
-```
-
-#### 1.4.3 Base de Datos y Esquema
+#### 1.4.2 Base de Datos y Esquema
 
 ```sql
 -- Base de datos
@@ -318,7 +298,6 @@ Security Group 2 - Servidor MySQL (172.31.25.142):
 |---------|-----------|--------|------------------|---------------------------------|
 | Inbound | TCP       | 22     | 0.0.0.0/0        | SSH para administración         |
 | Inbound | TCP       | 3306   | 172.31.31.7/32   | Conexión desde Flask (app)      |
-| Outbound| TCP       | ALL    | 0.0.0.0/0        | Internet para actualizaciones   |
 
 #### 1.5.2 Protocolo de Comunicación
 
