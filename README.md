@@ -49,20 +49,20 @@ datos en RDS.
 
 ### 🧱 Objetivo 1 – Arquitectura monolítica con 2 VMs
 
-```
+
 <img width="382" height="431" alt="image" src="https://github.com/user-attachments/assets/1259afe6-ba1a-488b-a327-84736b7ce9b9" />
 
-```
+
 
 Patrón: Arquitectura monolítica tradicional con separación de capas (app y base de datos).  
 Buenas prácticas: Uso de proxy inverso, variables de entorno, aislamiento con Docker y acceso restringido por Security Groups.
 
 ### ☁️ Objetivo 2 – Arquitectura monolítica escalable con servicios gestionados
 
-```
+
 <img width="733" height="747" alt="image" src="https://github.com/user-attachments/assets/4c757ad1-b9f9-4ec4-8d75-d3c2d5b81a8f" />
 
-```
+
 
 Patrón: Monolithic Web App con escalamiento elástico y almacenamiento compartido (ALB + ASG + RDS + EFS).  
 Buenas prácticas: Infraestructura redundante, health checks en ALB/ASG y persistencia compartida en EFS.
