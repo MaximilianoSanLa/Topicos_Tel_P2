@@ -34,3 +34,31 @@
 - Comunicación interna por red de Kubernetes  
 
 ---
+## 2. Diseño de Alto Nivel y Arquitectura
+
+---
+
+### 🧩 Objetivo 1 - Arquitectura Monolítica
+
+
+#### Patrones aplicados:
+- **Separación de capas:** presentación, aplicación y datos  
+- **Proxy reverso** para manejo de tráfico  
+- **Comunicación interna** por red privada  
+
+---
+
+### ⚙️ Objetivo 2 - Arquitectura Escalable
+
+#### Patrones aplicados:
+- **Auto-scaling horizontal** basado en métricas  
+- **Base de datos administrada** (RDS)  
+- **Almacenamiento compartido** (EFS)  
+- **Load balancing** a nivel de aplicación  
+- **Instancias stateless**  
+
+---
+
+
+
+
