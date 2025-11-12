@@ -450,6 +450,9 @@ Explicación:
 | Dominio | `proyecto2-juanmilo.com` |
 | URL de Acceso | `https://proyecto2-juanmilo.com`|
 
+### objetivo 4, kubernet.
+
+<img width="673" height="658" alt="image" src="https://github.com/user-attachments/assets/c8e8c539-a8ed-4b31-8437-563aeb06c66d" />
 
 
 
