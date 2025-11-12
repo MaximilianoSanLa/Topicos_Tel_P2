@@ -412,7 +412,7 @@ Explicación:
 
 ---
 
-##  Parámetros del Launch Template (Objetivo 2)
+##  Parámetros del Launch Template 
 
 | Campo | Valor | Descripción |
 |-------|-------|-------------|
@@ -422,6 +422,38 @@ Explicación:
 | User Data Script | (ver abajo) | Ejecuta la app automáticamente al iniciar |
 | Subnet | Default VPC | Usada para distribución Multi-AZ |
 | Key Pair | `bookstore-key.pem` | Acceso SSH manual opcional |
+
+# Acceso público: IP Elástica, DNS del ALB y Dominio
+
+## IP Elástica del Servidor Flask
+
+| Concepto | Valor |
+|---|---|
+| IP Elástica | `18.214.24.143` |
+| URL de Acceso | `http://18.214.24.143:5000` |
+
+---
+
+## DNS del Application Load Balancer (ALB)
+
+| Concepto | Valor |
+|---|---|
+| DNS Name | `bookstore-alb-1234567890.us-east-1.elb.amazonaws.com` |
+| URL de Acceso | `http://bookstore-alb-1234567890.us-east-1.elb.amazonaws.com` |
+
+---
+
+## Dominio personalizado (opcional/recomendado)
+
+| Concepto | Valor Ejemplo |
+|---|---|
+| Dominio | `proyecto2-juanmilo.com` |
+| URL de Acceso | `https://proyecto2-juanmilo.com`|
+
+
+
+
+
 
 
 
