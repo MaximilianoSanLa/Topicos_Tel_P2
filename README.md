@@ -67,14 +67,14 @@ Buenas prácticas: Uso de proxy inverso, variables de entorno, aislamiento con D
 Patrón: Monolithic Web App con escalamiento elástico y almacenamiento compartido (ALB + ASG + RDS + EFS).  
 Buenas prácticas: Infraestructura redundante, health checks en ALB/ASG y persistencia compartida en EFS.
 
-## 3.Descripción del ambiente de desarrollo y técnico
-# 4. Cómo se Compila y Ejecuta
+# 3.Descripción del ambiente de desarrollo y técnico
+##Cómo se Compila y Ejecuta
 
-## OBJETIVO 1: Aplicación Flask en Docker con MySQL Externo
+## Aplicación Flask en Docker con MySQL Externo
 
-### 4.1 Requisitos Previos
+### Requisitos Previos
 
-#### 4.1.1 Servidor de Aplicación (172.31.31.7)
+#### Servidor de Aplicación (172.31.31.7)
 
 ```bash
 # Conectarse al servidor
@@ -96,7 +96,7 @@ exit
 ssh -i "tu-clave.pem" ubuntu@<IP-PUBLICA-SERVIDOR-APP>
 ```
 
-#### 4.1.2 Servidor de Base de Datos (172.31.25.142)
+####  Servidor de Base de Datos (172.31.25.142)
 
 ```bash
 # Conectarse al servidor MySQL
@@ -112,9 +112,9 @@ sudo systemctl enable mysql
 sudo systemctl start mysql
 ```
 
-### 4.2 Configuración del Servidor MySQL
+###  Configuración del Servidor MySQL
 
-#### 4.2.1 Configurar MySQL para Conexiones Remotas
+####  Configurar MySQL para Conexiones Remotas
 
 ```bash
 # Editar configuración de MySQL
@@ -135,7 +135,7 @@ sudo netstat -tlnp | grep 3306
 # Debe mostrar: 0.0.0.0:3306
 ```
 
-#### 4.2.2 Crear Base de Datos y Usuario
+#### Crear Base de Datos y Usuario
 
 ```bash
 # Conectarse a MySQL
@@ -163,7 +163,7 @@ SELECT user, host FROM mysql.user WHERE user='bookstore_user';
 EXIT;
 ```
 
-#### 4.2.3 Verificar Conectividad desde Servidor Flask
+####  Verificar Conectividad desde Servidor Flask
 
 ```bash
 # Desde el servidor Flask (172.31.31.7)
@@ -180,9 +180,9 @@ SHOW DATABASES;
 EXIT;
 ```
 
-### 4.3 Preparar la Aplicación Flask
+###  Preparar la Aplicación Flask
 
-#### 4.3.1 Clonar o Transferir el Proyecto
+#### Clonar o Transferir el Proyecto
 
 ```bash
 # Opción A: Si el proyecto está en GitHub
@@ -198,7 +198,7 @@ scp -i "tu-clave.pem" -r ./Topicos_Tel_P2 ubuntu@<IP-PUBLICA>:~/
 cd ~/Topicos_Tel_P2
 ```
 
-#### 4.3.2 Crear Archivos de Configuración
+####  Crear Archivos de Configuración
 
 1) Crear archivo `.env`:
 
@@ -305,9 +305,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # ... resto del código
 ```
 
-### 4.4 Compilación y Construcción de la Imagen Docker
+###  Compilación y Construcción de la Imagen Docker
 
-#### 4.4.1 Verificar Estructura del Proyecto
+####  Verificar Estructura del Proyecto
 
 ```bash
 # Ver estructura de archivos
@@ -327,7 +327,7 @@ ls -la
 # - static/
 ```
 
-#### 4.4.2 Construir la Imagen Docker
+####  Construir la Imagen Docker
 
 ```bash
 # Limpiar contenedores e imágenes antiguas (opcional)
@@ -347,22 +347,7 @@ docker-compose -f docker-compose.prod.yml build
 # Successfully built ca7ba7dbd030
 # Successfully tagged topicos_tel_p2_flaskapp:latest
 ```
-
-#### 4.4.3 Verificar la Imagen Creada
-
-```bash
-# Listar imágenes Docker
-docker images
-
-# Debe aparecer algo como:
-# REPOSITORY                  TAG       IMAGE ID       CREATED         SIZE
-# topicos_tel_p2_flaskapp    latest    ca7ba7dbd030   2 minutes ago   250MB
-# python                     3.10-slim f708d86fc35f   3 weeks ago     125MB
-```
-
-### 4.5 Ejecución de la Aplicación
-
-#### 4.5.1 Iniciar el Contenedor
+####  Iniciar el Contenedor
 
 ```bash
 # Levantar el contenedor en modo detached (background)
@@ -372,41 +357,7 @@ docker-compose -f docker-compose.prod.yml up -d
 # Creating network "topicos_tel_p2_default" with the default driver
 # Creating topicos_flaskapp ... done
 ```
-
-#### 4.5.2 Verificar que el Contenedor esté Corriendo
-
-```bash
-# Ver estado de contenedores
-docker-compose -f docker-compose.prod.yml ps
-
-# Debe mostrar:
-# Name                    Command          State           Ports
-# ------------------------------------------------------------------------
-# topicos_flaskapp   gunicorn --bind...   Up      0.0.0.0:5000->5000/tcp
-
-# O con docker ps:
-docker ps
-# Debe mostrar el contenedor con STATUS "Up"
-```
-
-#### 4.5.3 Ver Logs en Tiempo Real
-
-```bash
-# Ver logs del contenedor
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Debe mostrar algo como:
-# flaskapp_1  | [2024-11-12 03:30:00] [1] [INFO] Starting gunicorn 21.2.0
-# flaskapp_1  | [2024-11-12 03:30:00] [1] [INFO] Listening at: http://0.0.0.0:5000
-# flaskapp_1  | [2024-11-12 03:30:00] [1] [INFO] Using worker: sync
-# flaskapp_1  | [2024-11-12 03:30:00] [7] [INFO] Booting worker with pid: 7
-# flaskapp_1  | [2024-11-12 03:30:00] [8] [INFO] Booting worker with pid: 8
-# flaskapp_1  | [2024-11-12 03:30:00] [9] [INFO] Booting worker with pid: 9
-# flaskapp_1  | [2024-11-12 03:30:00] [10] [INFO] Booting worker with pid: 10
-# Presionar Ctrl+C para salir de los logs (el contenedor sigue corriendo)
-```
-
-#### 4.5.4 Probar la Aplicación Localmente
+####  Probar la Aplicación Localmente
 
 ```bash
 # Probar desde el servidor
