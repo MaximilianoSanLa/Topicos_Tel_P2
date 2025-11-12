@@ -45,6 +45,7 @@
 - **Separación de capas:** presentación, aplicación y datos  
 - **Proxy reverso** para manejo de tráfico  
 - **Comunicación interna** por red privada  
+<img width="647" height="708" alt="image" src="https://github.com/user-attachments/assets/80d1c9f3-fcfb-4ef2-b9ec-3355ea14ce83" />
 
 ---
 
