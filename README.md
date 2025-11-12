@@ -44,12 +44,15 @@
 #### Patrones aplicados:
 - **Separación de capas:** presentación, aplicación y datos  
 - **Proxy reverso** para manejo de tráfico  
-- **Comunicación interna** por red privada  
+- **Comunicación interna** por red privada
+ ## Arquitectura
 <img width="647" height="708" alt="image" src="https://github.com/user-attachments/assets/80d1c9f3-fcfb-4ef2-b9ec-3355ea14ce83" />
 
 ---
-
 ### ⚙️ Objetivo 2 - Arquitectura Escalable
+## Arquitectura
+<img width="733" height="741" alt="image" src="https://github.com/user-attachments/assets/70d73879-d6b9-4101-8be3-578da4c62806" />
+
 
 #### Patrones aplicados:
 - **Auto-scaling horizontal** basado en métricas  
