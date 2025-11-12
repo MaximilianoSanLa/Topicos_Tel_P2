@@ -68,7 +68,7 @@ Patrón: Monolithic Web App con escalamiento elástico y almacenamiento comparti
 Buenas prácticas: Infraestructura redundante, health checks en ALB/ASG y persistencia compartida en EFS.
 
 # 3.Descripción del ambiente de desarrollo y técnico
-##Cómo se Compila y Ejecuta
+## Cómo se Compila y Ejecuta
 
 ## Aplicación Flask en Docker con MySQL Externo
 
