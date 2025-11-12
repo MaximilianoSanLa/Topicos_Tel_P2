@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8
+    container_name: bookstore_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: bookstore
+      MYSQL_USER: bookstore_user
+      MYSQL_PASSWORD: bookstore_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bookstore_net
+
+  auth_service:
+    build: ./auth_service
+    container_name: auth_service
+    restart: always
+    ports:
+      - "5001:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=bookstore_user
+      - DB_PASS=bookstore_pass
+      - DB_NAME=bookstore
+      - SECRET_KEY=secretkey
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bookstore_net
+
+  catalog_service:
+    build: ./catalog_service
+    container_name: catalog_service
+    restart: always
+    ports:
+      - "5002:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=bookstore_user
+      - DB_PASS=bookstore_pass
+      - DB_NAME=bookstore
+      - SECRET_KEY=secretkey
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bookstore_net
+
+  sales_service:
+    build: ./sales_service
+    container_name: sales_service
+    restart: always
+    ports:
+      - "5003:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=bookstore_user
+      - DB_PASS=bookstore_pass
+      - DB_NAME=bookstore
+      - SECRET_KEY=secretkey
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bookstore_net
+
+volumes:
+  db_data:
+
+networks:
+  bookstore_net:
