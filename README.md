@@ -69,9 +69,6 @@ Buenas prácticas: Infraestructura redundante, health checks en ALB/ASG y persis
 
 # 3.Descripción del ambiente de desarrollo y técnico
 ## Cómo se Compila y Ejecuta
-
-## Aplicación Flask en Docker con MySQL Externo
-
 ### Requisitos Previos
 
 #### Servidor de Aplicación (172.31.31.7)
@@ -305,6 +302,359 @@ curl http://localhost:5000/health
 # Si configuraste el endpoint de health check, debe retornar:
 # {"status":"healthy","database":"connected"}
 ```
+
+# 4. Cómo se Compila y Ejecuta
+
+## OBJETIVO 1: Aplicación Flask en Docker con MySQL Externo
+
+### 4.1 Requisitos Previos
+
+#### 4.1.1 Servidor de Aplicación (172.31.31.7)
+
+```bash
+# Conectarse al servidor
+ssh -i "tu-clave.pem" ubuntu@<IP-PUBLICA-SERVIDOR-APP>
+
+# Verificar que Docker esté instalado
+docker --version
+docker-compose --version
+
+# Si no están instalados, instalar:
+sudo apt-get update
+sudo apt-get install -y docker.io docker-compose
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker ubuntu
+
+# Cerrar sesión y volver a conectar para que los cambios surtan efecto
+exit
+ssh -i "tu-clave.pem" ubuntu@<IP-PUBLICA-SERVIDOR-APP>
+```
+
+#### 4.1.2 Servidor de Base de Datos (172.31.25.142)
+
+```bash
+# Conectarse al servidor MySQL
+ssh -i "tu-clave.pem" ubuntu@<IP-PUBLICA-SERVIDOR-MYSQL>
+
+# Verificar que MySQL esté instalado y corriendo
+sudo systemctl status mysql
+
+# Si no está instalado:
+sudo apt-get update
+sudo apt-get install -y mysql-server
+sudo systemctl enable mysql
+sudo systemctl start mysql
+```
+
+### 4.2 Configuración del Servidor MySQL
+
+#### 4.2.1 Configurar MySQL para Conexiones Remotas
+
+```bash
+# Editar configuración de MySQL
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+
+# Buscar y cambiar la línea:
+# bind-address = 127.0.0.1
+# Por:
+bind-address = 0.0.0.0
+
+# Guardar (Ctrl+O, Enter) y salir (Ctrl+X)
+
+# Reiniciar MySQL
+sudo systemctl restart mysql
+
+# Verificar que esté escuchando en todas las interfaces
+sudo netstat -tlnp | grep 3306
+# Debe mostrar: 0.0.0.0:3306
+```
+
+#### 4.2.2 Crear Base de Datos y Usuario
+
+```bash
+# Conectarse a MySQL
+sudo mysql -u root -p
+```
+
+```sql
+-- Crear la base de datos
+CREATE DATABASE bookstore CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Crear usuario con acceso remoto
+CREATE USER 'bookstore_user'@'%' IDENTIFIED BY 'bookstore_pass';
+
+-- Otorgar permisos
+GRANT ALL PRIVILEGES ON bookstore.* TO 'bookstore_user'@'%';
+
+-- Aplicar cambios
+FLUSH PRIVILEGES;
+
+-- Verificar
+SHOW DATABASES;
+SELECT user, host FROM mysql.user WHERE user='bookstore_user';
+
+-- Salir
+EXIT;
+```
+
+#### 4.2.3 Verificar Conectividad desde Servidor Flask
+
+```bash
+# Desde el servidor Flask (172.31.31.7)
+
+# Instalar cliente MySQL
+sudo apt-get install -y mysql-client
+
+# Probar conexión
+mysql -h 172.31.25.142 -u bookstore_user -p
+# Ingresar contraseña: bookstore_pass
+
+# Si se conecta exitosamente, escribir:
+SHOW DATABASES;
+EXIT;
+```
+
+### 4.3 Preparar la Aplicación Flask
+
+#### 4.3.1 Clonar o Transferir el Proyecto
+
+```bash
+# Opción A: Si el proyecto está en GitHub
+cd ~
+git clone https://github.com/tu-usuario/Topicos_Tel_P2.git
+cd Topicos_Tel_P2
+
+# Opción B: Transferir desde tu máquina local
+# Desde tu máquina local:
+scp -i "tu-clave.pem" -r ./Topicos_Tel_P2 ubuntu@<IP-PUBLICA>:~/
+
+# Luego en el servidor:
+cd ~/Topicos_Tel_P2
+```
+
+#### 4.3.2 Crear Archivos de Configuración
+
+1) Crear archivo `.env`:
+
+```bash
+nano .env
+```
+
+Contenido:
+
+```bash
+SECRET_KEY=mi_clave_super_secreta_2024_cambiar_en_produccion
+DB_HOST=172.31.25.142
+DB_USER=bookstore_user
+DB_PASS=bookstore_pass
+DB_NAME=bookstore
+```
+
+2) Crear archivo `docker-compose.prod.yml`:
+
+```bash
+nano docker-compose.prod.yml
+```
+
+Contenido:
+
+```yaml
+version: '3.8'
+services:
+  flaskapp:
+    build: .
+    container_name: topicos_flaskapp
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
+```
+
+3) Crear archivo `Dockerfile`:
+
+```bash
+nano Dockerfile
+```
+
+Contenido:
+
+```dockerfile
+FROM python:3.10-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
+```
+
+4) Verificar/Crear archivo `requirements.txt`:
+
+```bash
+nano requirements.txt
+```
+
+Contenido:
+
+```txt
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+PyMySQL==1.1.0
+cryptography==41.0.7
+python-dotenv==1.0.0
+gunicorn==21.2.0
+```
+
+5) Actualizar `app.py` para cargar variables de entorno (al inicio del archivo):
+
+```python
+from flask import Flask, render_template
+from extensions import db, login_manager
+from models.user import User
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secretkey')
+
+# Configuración para MySQL externo
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_USER = os.getenv('DB_USER', 'bookstore_user')
+DB_PASS = os.getenv('DB_PASS', 'bookstore_pass')
+DB_NAME = os.getenv('DB_NAME', 'bookstore')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# ... resto del código
+```
+
+### 4.4 Compilación y Construcción de la Imagen Docker
+
+#### 4.4.1 Verificar Estructura del Proyecto
+
+```bash
+# Ver estructura de archivos
+cd ~/Topicos_Tel_P2
+ls -la
+
+# Debe contener al menos:
+# - app.py
+# - Dockerfile
+# - docker-compose.prod.yml
+# - requirements.txt
+# - .env
+# - extensions.py
+# - models/
+# - controllers/
+# - templates/
+# - static/
+```
+
+#### 4.4.2 Construir la Imagen Docker
+
+```bash
+# Limpiar contenedores e imágenes antiguas (opcional)
+docker-compose -f docker-compose.prod.yml down
+docker system prune -f
+
+# Construir la imagen Docker
+docker-compose -f docker-compose.prod.yml build
+
+# Ver el progreso (ejemplo de salida):
+# Step 1/6 : FROM python:3.10-slim
+# Step 2/6 : WORKDIR /app
+# Step 3/6 : COPY requirements.txt .
+# Step 4/6 : RUN pip install --no-cache-dir -r requirements.txt
+# Step 5/6 : COPY . .
+# Step 6/6 : EXPOSE 5000
+# Successfully built ca7ba7dbd030
+# Successfully tagged topicos_tel_p2_flaskapp:latest
+```
+
+#### 4.4.3 Verificar la Imagen Creada
+
+```bash
+# Listar imágenes Docker
+docker images
+
+# Debe aparecer algo como:
+# REPOSITORY                  TAG       IMAGE ID       CREATED         SIZE
+# topicos_tel_p2_flaskapp    latest    ca7ba7dbd030   2 minutes ago   250MB
+# python                     3.10-slim f708d86fc35f   3 weeks ago     125MB
+```
+
+### 4.5 Ejecución de la Aplicación
+
+#### 4.5.1 Iniciar el Contenedor
+
+```bash
+# Levantar el contenedor en modo detached (background)
+docker-compose -f docker-compose.prod.yml up -d
+
+# Ver el proceso de inicio (ejemplo de salida):
+# Creating network "topicos_tel_p2_default" with the default driver
+# Creating topicos_flaskapp ... done
+```
+
+#### 4.5.2 Verificar que el Contenedor esté Corriendo
+
+```bash
+# Ver estado de contenedores
+docker-compose -f docker-compose.prod.yml ps
+
+# Debe mostrar:
+# Name                    Command          State           Ports
+# ------------------------------------------------------------------------
+# topicos_flaskapp   gunicorn --bind...   Up      0.0.0.0:5000->5000/tcp
+
+# O con docker ps:
+docker ps
+# Debe mostrar el contenedor con STATUS "Up"
+```
+
+#### 4.5.3 Ver Logs en Tiempo Real
+
+```bash
+# Ver logs del contenedor
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Debe mostrar algo como:
+# flaskapp_1  | [2024-11-12 03:30:00] [1] [INFO] Starting gunicorn 21.2.0
+# flaskapp_1  | [2024-11-12 03:30:00] [1] [INFO] Listening at: http://0.0.0.0:5000
+# flaskapp_1  | [2024-11-12 03:30:00] [1] [INFO] Using worker: sync
+# flaskapp_1  | [2024-11-12 03:30:00] [7] [INFO] Booting worker with pid: 7
+# flaskapp_1  | [2024-11-12 03:30:00] [8] [INFO] Booting worker with pid: 8
+# flaskapp_1  | [2024-11-12 03:30:00] [9] [INFO] Booting worker with pid: 9
+# flaskapp_1  | [2024-11-12 03:30:00] [10] [INFO] Booting worker with pid: 10
+# Presionar Ctrl+C para salir de los logs (el contenedor sigue corriendo)
+```
+
+#### 4.5.4 Probar la Aplicación Localmente
+
+```bash
+# Probar desde el servidor
+curl http://localhost:5000
+# Debe retornar HTML de la página principal
+
+# Probar un endpoint específico
+curl http://localhost:5000/health
+# Si configuraste el endpoint de health check, debe retornar:
+# {"status":"healthy","database":"connected"}
+```
+
+
 
 
 
